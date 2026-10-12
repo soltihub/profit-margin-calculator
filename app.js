@@ -1,126 +1,150 @@
-// MarginMetric calculator logic
-(function(){
-  const $ = id => document.getElementById(id);
+import { calculateTotals } from './calc.js';
 
-  const inputs = [
-    'costPrice', 'sellingPrice', 'shipping', 'quantity',
-    'gatewayPercent', 'gatewayFixed', 'currency'
-  ].map(id => $(id));
+const $ = id => document.getElementById(id);
+const storageKey = 'marginMetricInputs_v1';
 
-  const formatCurrency = (value, currency = 'USD') => {
-    try {
-      return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(value);
-    } catch (e) {
-      return value.toFixed(2);
-    }
-  };
+const defaultRates = { USD: 1, EUR: 0.92, GBP: 0.79 };
+let exchangeRates = { ...defaultRates };
+let lastRatesUpdate = null;
 
-  function parseFloatOrZero(el) {
-    const v = parseFloat(el.value);
-    return Number.isFinite(v) ? v : 0;
+function formatCurrency(value, currency = 'USD') {
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(value);
+  } catch (e) {
+    return `${currency} ${value.toFixed(2)}`;
   }
+}
 
-  function calculate() {
-    const cost = parseFloatOrZero($('costPrice'));
-    const sell = parseFloatOrZero($('sellingPrice'));
-    const shipping = parseFloatOrZero($('shipping'));
-    const qty = Math.max(1, Math.floor(parseFloatOrZero($('quantity')) || 1));
-    const gatewayPercent = parseFloatOrZero($('gatewayPercent')) / 100;
-    const gatewayFixed = parseFloatOrZero($('gatewayFixed'));
-    const currency = $('currency').value || 'USD';
+function parseFloatOrZero(el) {
+  const v = parseFloat(el.value);
+  return Number.isFinite(v) ? v : 0;
+}
 
-    // Totals based on quantity
-    const totalSell = sell * qty;
-    const totalCost = cost * qty;
-    const totalShipping = shipping * qty;
-
-    // Gateway fees are usually percent of the transaction amount plus fixed fee per transaction
-    const gatewayFeePerTransaction = (sell * gatewayPercent) + gatewayFixed;
-    const totalGateway = gatewayFeePerTransaction * qty;
-
-    const grossProfit = totalSell - totalCost; // before shipping & fees
-    const netProfit = totalSell - totalCost - totalShipping - totalGateway;
-
-    const marginPercent = totalSell > 0 ? (netProfit / totalSell) * 100 : 0;
-    const markupPercent = cost > 0 ? ((sell - cost) / cost) * 100 : 0;
-    const netPerUnit = netProfit / qty;
-
-    // Update UI
-    $('grossProfit').textContent = formatCurrency(grossProfit, currency);
-    $('gatewayFee').textContent = formatCurrency(totalGateway, currency);
-    $('netProfit').textContent = formatCurrency(netProfit, currency);
-    $('marginPercent').textContent = marginPercent.toFixed(2) + ' %';
-    $('markupPercent').textContent = markupPercent.toFixed(2) + ' %';
-    $('netPerUnit').textContent = formatCurrency(netPerUnit, currency);
-
-    // Store last summary for copy
-    window.__marginMetricSummary = {
-      cost, sell, shipping, qty, gatewayPercent: gatewayPercent * 100, gatewayFixed, currency,
-      grossProfit, totalGateway, netProfit, marginPercent, markupPercent, netPerUnit
-    };
-  }
-
-  function copySummary() {
-    const s = window.__marginMetricSummary;
-    if (!s) return;
-    const lines = [];
-    lines.push(`MarginMetric summary (${s.currency})`);
-    lines.push(`Quantity: ${s.qty}`);
-    lines.push(`Selling price: ${s.currency} ${s.sell.toFixed(2)}`);
-    lines.push(`Cost price: ${s.currency} ${s.cost.toFixed(2)}`);
-    lines.push(`Shipping (total): ${s.currency} ${(s.shipping * s.qty).toFixed(2)}`);
-    lines.push(`Gateway fees (total): ${s.currency} ${s.totalGateway.toFixed(2)} (${s.gatewayPercent.toFixed(2)}% + ${s.gatewayFixed.toFixed(2)} per tx)`);
-    lines.push(`Gross profit: ${s.currency} ${s.grossProfit.toFixed(2)}`);
-    lines.push(`Net profit: ${s.currency} ${s.netProfit.toFixed(2)}`);
-    lines.push(`Net per unit: ${s.currency} ${s.netPerUnit.toFixed(2)}`);
-    lines.push(`Margin: ${s.marginPercent.toFixed(2)}%`);
-    lines.push(`Markup: ${s.markupPercent.toFixed(2)}%`);
-
-    const text = lines.join('\n');
-
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(() => {
-        flashButton('Copied!');
-      }).catch(() => {
-        flashButton('Copy failed');
-      });
-    } else {
-      // fallback
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      try {
-        document.execCommand('copy');
-        flashButton('Copied!');
-      } catch (e) {
-        flashButton('Copy failed');
-      }
-      ta.remove();
-    }
-  }
-
-  function flashButton(msg) {
-    const btn = $('copyBtn');
-    const orig = btn.textContent;
-    btn.textContent = msg;
-    btn.disabled = true;
-    setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1500);
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    // attach listeners
-    const elements = ['costPrice','sellingPrice','shipping','quantity','gatewayPercent','gatewayFixed','currency'];
-    elements.forEach(id => {
-      const el = $(id);
-      if (!el) return;
-      el.addEventListener('input', calculate);
-      el.addEventListener('change', calculate);
+function loadStoredInputs() {
+  try {
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return;
+    const obj = JSON.parse(raw);
+    ['costPrice','sellingPrice','shipping','quantity','gatewayPercent','gatewayFixed','currency'].forEach(k => {
+      if (obj[k] !== undefined && $(k)) $(k).value = obj[k];
     });
+  } catch (e) {
+    // ignore
+  }
+}
 
-    $('copyBtn').addEventListener('click', copySummary);
-
-    // initial calculation
-    calculate();
+function saveInputs() {
+  const obj = {};
+  ['costPrice','sellingPrice','shipping','quantity','gatewayPercent','gatewayFixed','currency'].forEach(k => {
+    const el = $(k);
+    if (!el) return;
+    obj[k] = el.value;
   });
-})();
+  try { localStorage.setItem(storageKey, JSON.stringify(obj)); } catch (e) {}
+}
+
+async function fetchLiveRates() {
+  const info = $('ratesInfo');
+  info.textContent = 'Fetching live rates...';
+  try {
+    const resp = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=USD,EUR,GBP');
+    if (!resp.ok) throw new Error('Network response not ok');
+    const j = await resp.json();
+    exchangeRates = { USD: 1, EUR: j.rates.EUR, GBP: j.rates.GBP };
+    lastRatesUpdate = new Date().toISOString();
+    info.textContent = `Live rates loaded (base USD) — updated ${new Date(lastRatesUpdate).toLocaleString()}`;
+    calculate();
+  } catch (e) {
+    exchangeRates = { ...defaultRates };
+    info.textContent = 'Failed to fetch live rates — using built-in rates';
+  }
+}
+
+function calculate() {
+  const cost = parseFloatOrZero($('costPrice'));
+  const sell = parseFloatOrZero($('sellingPrice'));
+  const shipping = parseFloatOrZero($('shipping'));
+  const qty = Math.max(1, Math.floor(parseFloatOrZero($('quantity')) || 1));
+  const gatewayPercent = parseFloatOrZero($('gatewayPercent')) / 100;
+  const gatewayFixed = parseFloatOrZero($('gatewayFixed'));
+  const currency = $('currency').value || 'USD';
+
+  // Convert values from base (assume USD inputs) to selected currency for display
+  const rate = exchangeRates[currency] || 1;
+
+  // Use the calculation function (operate in base currency USD then convert outputs)
+  const out = calculateTotals({ cost, sell, shipping, qty, gatewayPercent, gatewayFixed });
+
+  // Convert monetary outputs for display
+  $('grossProfit').textContent = formatCurrency(out.grossProfit * rate, currency);
+  $('gatewayFee').textContent = formatCurrency(out.totalGateway * rate, currency);
+  $('netProfit').textContent = formatCurrency(out.netProfit * rate, currency);
+  $('marginPercent').textContent = out.marginPercent.toFixed(2) + ' %';
+  $('markupPercent').textContent = out.markupPercent.toFixed(2) + ' %';
+  $('netPerUnit').textContent = formatCurrency(out.netPerUnit * rate, currency);
+
+  // save inputs
+  saveInputs();
+
+  // keep last summary available
+  window.__marginMetricSummary = { ...out, currency, rate };
+}
+
+function copySummary() {
+  const s = window.__marginMetricSummary;
+  if (!s) return;
+  const lines = [];
+  lines.push(`MarginMetric summary (${s.currency})`);
+  lines.push(`Quantity: ${s.qty}`);
+  lines.push(`Selling price (per unit): ${s.currency} ${s.sell.toFixed(2)}`);
+  lines.push(`Cost price (per unit): ${s.currency} ${s.cost.toFixed(2)}`);
+  lines.push(`Shipping (total): ${s.currency} ${(s.shipping * s.qty).toFixed(2)}`);
+  lines.push(`Gateway fees (total): ${s.currency} ${s.totalGateway.toFixed(2)} (${(s.gatewayPercent*100).toFixed(2)}% + ${s.gatewayFixed.toFixed(2)} per tx)`);
+  lines.push(`Gross profit: ${s.currency} ${s.grossProfit.toFixed(2)}`);
+  lines.push(`Net profit: ${s.currency} ${s.netProfit.toFixed(2)}`);
+  lines.push(`Net per unit: ${s.currency} ${s.netPerUnit.toFixed(2)}`);
+  lines.push(`Margin: ${s.marginPercent.toFixed(2)}%`);
+  lines.push(`Markup: ${s.markupPercent.toFixed(2)}%`);
+  lines.push('---');
+  lines.push('Note: numeric inputs are interpreted as base USD amounts; displayed values are converted using current exchange rates.');
+
+  const text = lines.join('\n');
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => flashButton('Copied!')).catch(() => flashButton('Copy failed'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); flashButton('Copied!'); } catch (e) { flashButton('Copy failed'); }
+    ta.remove();
+  }
+}
+
+function flashButton(msg) {
+  const btn = $('copyBtn');
+  const orig = btn.textContent;
+  btn.textContent = msg;
+  btn.disabled = true;
+  setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1500);
+}
+
+// Wire up
+window.addEventListener('DOMContentLoaded', () => {
+  loadStoredInputs();
+
+  const elements = ['costPrice','sellingPrice','shipping','quantity','gatewayPercent','gatewayFixed','currency'];
+  elements.forEach(id => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener('input', calculate);
+    el.addEventListener('change', calculate);
+  });
+
+  $('copyBtn').addEventListener('click', copySummary);
+  $('fetchRates').addEventListener('click', fetchLiveRates);
+
+  // initial calculation
+  calculate();
+});

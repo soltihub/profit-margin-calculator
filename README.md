@@ -1,36 +1,68 @@
-# 📊 MarginMetric — E-Commerce Profit & Margin Calculator
+# MarginMetric — E-Commerce Profit & Margin Calculator
 
-A lightweight, high-performance web tool designed for dropshippers, e-commerce store owners, and retail sellers to calculate exact net profit, gross profit margins, and markup percentages in real time.
+A lightweight, mobile-first profit & margin calculator for e-commerce sellers. This repository now contains a working browser app, formula unit tests, live/exchange-rate helpers, and localStorage persistence.
+
+## What I added
+
+- Mobile-first responsive UI (Tailwind CSS CDN)
+- Separate `calc.js` module with the financial formulas
+- `app.js` (ES module) that wires the UI to `calc.js`, saves inputs to `localStorage`, and supports currency display conversion
+- `package.json` and tests in `tests/run-tests.mjs` (Node) to verify the financial formulas
+- Live exchange-rate fetch (uses https://api.exchangerate.host/) with safe fallback to built-in rates
+
+## Run locally
+
+Option A — Open in browser
+1. Clone the repo or download the files.
+2. Open `index.html` directly in a browser. (Some browsers restrict `fetch` from file:// — for full features use Option B.)
+
+Option B — Simple static server (recommended)
+
+Using Python:
+
+```bash
+# Python 3
+python -m http.server 8000
+# then open http://localhost:8000
+```
+
+Using Node (serve package):
+
+```bash
+npx serve .
+# or use any static file server
+```
+
+## Run the tests
+
+Node (requires no dependencies):
+
+```bash
+npm test
+```
+
+This runs `tests/run-tests.mjs` which imports `calc.js` and performs basic assertions on the core formulas.
+
+## Notes on currency conversion
+
+- Inputs are taken as base USD values. Display values are converted to the selected currency.
+- Click "Fetch live rates" to pull USD→EUR/GBP live rates from exchangerate.host. If the fetch fails, the app uses built-in default rates.
+
+## Screenshots
+
+(Replace these placeholders by adding images to the repository and updating the paths.)
+
+![screenshot-mobile](.github/screenshots/mobile.png)
+
+![screenshot-desktop](.github/screenshots/desktop.png)
+
+## Next improvements you can ask me to add
+
+- Persist exchange-rate preferences or auto-refresh schedule
+- Dark mode and theming
+- More payment gateways and custom fee rules
+- CI to run the tests on push (GitHub Actions)
 
 ---
 
-## ✨ Features
-
-- **Real-Time Calculations:** Instant updates as you input cost price, selling price, shipping fees, and payment gateway rates.
-- **Accurate Net Earnings:** Accounts for hidden expenses like transaction fees and shipping costs.
-- **One-Click Copy:** Easily copy the financial breakdown to your clipboard.
-- **Responsive & Modern UI:** Fully optimized for mobile, tablet, and desktop devices using Tailwind CSS.
-- **SEO & Ad-Ready:** Built-in modal overlays for Privacy Policy and Terms of Use, formatted for Google AdSense compliance.
-
----
-
-## 🛠️ Tech Stack
-
-- **HTML5:** Semantic structure and layout.
-- **Tailwind CSS (CDN):** Utility-first styling and layout management.
-- **Vanilla JavaScript:** Fast DOM manipulation and real-time financial math (no heavy frameworks required).
-
----
-
-## 🚀 Live Demo
-
-Check out the live interactive tool hosted on GitHub Pages:  
-👉 `https://YOUR-GITHUB-USERNAME.github.io/YOUR-REPOSITORY-NAME/`
-
-*(Replace `YOUR-GITHUB-USERNAME` and `YOUR-REPOSITORY-NAME` with your actual GitHub details after enabling GitHub Pages!)*
-
----
-
-## 📄 License
-
-This project is open-source and available under the MIT License. Feel free to fork, customize, or use it for your own web tool portfolio!
+Built by soltihub — feel free to open issues or PRs.

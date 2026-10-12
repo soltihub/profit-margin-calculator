@@ -1,0 +1,11 @@
+{
+  "name": "profit-margin-calculator",
+  "version": "1.0.0",
+  "description": "MarginMetric — E-Commerce Profit & Margin Calculator",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/run-tests.mjs"
+  },
+  "author": "soltihub",
+  "license": "MIT"
+}
