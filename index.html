@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MarginMetric — Profit & Margin Calculator</title>
+  <meta name="description" content="Real-time e-commerce profit, margin and markup calculator with gateway fee deductions and copy-to-clipboard summary." />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex items-center justify-center p-6">
+  <main class="max-w-3xl w-full bg-white rounded-xl shadow-md p-6">
+    <header class="mb-4">
+      <h1 class="text-2xl font-semibold">MarginMetric</h1>
+      <p class="text-sm text-slate-500">Real-time Profit, Margin %, Markup %, and Gateway Fee calculator</p>
+    </header>
+
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div class="space-y-3">
+        <label class="block text-sm font-medium">Cost price</label>
+        <input id="costPrice" type="number" step="0.01" min="0" value="10.00" class="w-full p-2 border rounded" />
+
+        <label class="block text-sm font-medium">Selling price</label>
+        <input id="sellingPrice" type="number" step="0.01" min="0" value="20.00" class="w-full p-2 border rounded" />
+
+        <label class="block text-sm font-medium">Shipping fee</label>
+        <input id="shipping" type="number" step="0.01" min="0" value="3.00" class="w-full p-2 border rounded" />
+
+        <label class="block text-sm font-medium">Quantity</label>
+        <input id="quantity" type="number" step="1" min="1" value="1" class="w-full p-2 border rounded" />
+      </div>
+
+      <div class="space-y-3">
+        <label class="block text-sm font-medium">Gateway percentage fee (%)</label>
+        <input id="gatewayPercent" type="number" step="0.01" min="0" value="2.9" class="w-full p-2 border rounded" />
+
+        <label class="block text-sm font-medium">Gateway fixed fee (per transaction)</label>
+        <input id="gatewayFixed" type="number" step="0.01" min="0" value="0.30" class="w-full p-2 border rounded" />
+
+        <label class="block text-sm font-medium">Currency</label>
+        <select id="currency" class="w-full p-2 border rounded">
+          <option value="USD" selected>USD</option>
+          <option value="EUR">EUR</option>
+          <option value="GBP">GBP</option>
+        </select>
+
+        <div class="mt-2">
+          <button id="copyBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Copy summary</button>
+        </div>
+      </div>
+    </section>
+
+    <section aria-live="polite" class="bg-slate-100 p-4 rounded">
+      <h2 class="text-lg font-medium mb-2">Results</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="p-3 bg-white rounded shadow-sm">
+          <div class="text-sm text-slate-500">Gross profit</div>
+          <div id="grossProfit" class="text-xl font-semibold mt-1">—</div>
+        </div>
+        <div class="p-3 bg-white rounded shadow-sm">
+          <div class="text-sm text-slate-500">Gateway fee (total)</div>
+          <div id="gatewayFee" class="text-xl font-semibold mt-1">—</div>
+        </div>
+        <div class="p-3 bg-white rounded shadow-sm">
+          <div class="text-sm text-slate-500">Net profit</div>
+          <div id="netProfit" class="text-xl font-semibold mt-1">—</div>
+        </div>
+        <div class="p-3 bg-white rounded shadow-sm">
+          <div class="text-sm text-slate-500">Margin %</div>
+          <div id="marginPercent" class="text-xl font-semibold mt-1">—</div>
+        </div>
+        <div class="p-3 bg-white rounded shadow-sm">
+          <div class="text-sm text-slate-500">Markup %</div>
+          <div id="markupPercent" class="text-xl font-semibold mt-1">—</div>
+        </div>
+        <div class="p-3 bg-white rounded shadow-sm">
+          <div class="text-sm text-slate-500">Net profit per unit</div>
+          <div id="netPerUnit" class="text-xl font-semibold mt-1">—</div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="mt-4 text-sm text-slate-500">Built with Vanilla JavaScript & Tailwind CSS • <a href="https://github.com/soltihub/profit-margin-calculator" class="text-blue-600">repo</a></footer>
+
+    <script src="app.js"></script>
+  </main>
+</body>
+</html>
