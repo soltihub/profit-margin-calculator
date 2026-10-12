@@ -1,0 +1,8 @@
+{
+  "name": "MarginMetric",
+  "description": "Real-time e-commerce profit, margin and markup calculator with gateway fee deductions and copy-to-clipboard summary.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

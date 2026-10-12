@@ -7,7 +7,7 @@ export function calculateTotals({ cost = 0, sell = 0, shipping = 0, qty = 1, gat
   const totalCost = cost * qty;
   const totalShipping = shipping * qty;
 
-  const gatewayFeePerTransaction = (sell * gatewayPercent) + gatewayFixed;
+  const gatewayFeePerTransaction = sell > 0 ? (sell * gatewayPercent) + gatewayFixed : 0;
   const totalGateway = gatewayFeePerTransaction * qty;
 
   const grossProfit = totalSell - totalCost;
