@@ -1,0 +1,6 @@
+{
+  "summary": "Implementation plan for automatic real-time calculation on all input field changes in MarginMetric. Covers instant event listeners, parsing resilience for blank/invalid states, and architecture mapping.",
+  "updatedAt": "2026-10-12T18:57:44.675228563Z",
+  "requestFeedback": true,
+  "userFacing": true
+}
